@@ -12,6 +12,14 @@ pip install -e .[demos]
 
 and have fun with the code!
 
+## Submission
+
+zip command excluding unnecessary bloat for submission:
+
+```bash
+zip -r mininnverifier.zip . -x ".git/*" "tests/*" "examples/*" ".venv/*"
+```
+
 ## Acknowledgements
 
 For the mini machine learning framework, this repo is inspired by the awesome [micrograd](https://github.com/karpathy/micrograd/) repository that implements a jet smaller PyTorch-style deep learning framework. [Autodidax](https://docs.jax.dev/en/latest/autodidax.html) from the Jax docs taught me about the core ideas behind Jax. This repo is essentially Autodidax but in the micrograd format instead of a tutorial. I simplified some parts some more and tried to use less jargon.
