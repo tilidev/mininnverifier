@@ -69,4 +69,5 @@ eval_rules = {
     core.exp: np.exp,
     core.log: np.log,
     core.where: np.where,
+    core.leaky_relu: lambda x, slope: np.where(x > 0, x, slope*x),
 }

@@ -99,6 +99,8 @@ expand_dims = Primitive("expand_dims", 1, ("axes",))
 moveaxis = Primitive("moveaxis", 1, ("source", "destination"))
 reshape = Primitive("reshape", 1, ("new_shape",))
 reduce_sum = ReduceSumPrimitive()
+# reference implementation extension
+leaky_relu = Primitive("leaky_relu", 1, ("slope",))
 
 
 def sub(x, y):

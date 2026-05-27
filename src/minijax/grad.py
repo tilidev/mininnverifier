@@ -117,4 +117,5 @@ vjp_rules = {
     core.exp: lambda t, out, x: t * out,
     core.log: lambda t, _, x: t / x,
     core.where: vjp_where,
+    core.leaky_relu: lambda t, _, x, slope: core.where(core.relu(x), t, t*Array(slope)),
 }
