@@ -101,6 +101,8 @@ reshape = Primitive("reshape", 1, ("new_shape",))
 reduce_sum = ReduceSumPrimitive()
 # reference implementation extension
 leaky_relu = Primitive("leaky_relu", 1, ("slope",))
+normalcdf = Primitive("normalcdf", 1)
+elu = Primitive("elu", 1)
 
 
 def sub(x, y):

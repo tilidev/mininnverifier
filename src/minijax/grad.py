@@ -118,4 +118,6 @@ vjp_rules = {
     core.log: lambda t, _, x: t / x,
     core.where: vjp_where,
     core.leaky_relu: lambda t, _, x, slope: core.where(core.relu(x), t, t*Array(slope)),
+    #need normalcdf stuff
+    core.elu: lambda t, _, x: core.where(core.relu(x), t, t*core.exp(x)),
 }

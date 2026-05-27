@@ -1,6 +1,7 @@
 # Copyright (c) 2025 by David Boetius
 # Licensed under the MIT Licensed.
 import numpy as np
+import scipy.special as sp
 
 from . import core
 
@@ -70,4 +71,6 @@ eval_rules = {
     core.log: np.log,
     core.where: np.where,
     core.leaky_relu: lambda x, slope: np.where(x > 0, x, slope*x),
+    core.normalcdf: lambda x: (1 + sp.erf(x/np.sqrt(2))) / 2,
+    core.elu: lambda x, alpha: np.where(x > 0, x, alpha * (np.exp(x) - 1)),
 }
