@@ -103,6 +103,7 @@ reduce_sum = ReduceSumPrimitive()
 leaky_relu = Primitive("leaky_relu", 1, ("slope",))
 normalcdf = Primitive("normalcdf", 1)
 elu = Primitive("elu", 1)
+gelu = Primitive("gelu", 1)
 
 
 def sub(x, y):

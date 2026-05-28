@@ -1,5 +1,7 @@
 # Copyright (c) 2025 by David Boetius
 # Licensed under the MIT Licensed.
+import math
+
 from . import core
 from .compute_graph import make_graph
 from .eval import Array, zeros
@@ -117,7 +119,16 @@ vjp_rules = {
     core.exp: lambda t, out, x: t * out,
     core.log: lambda t, _, x: t / x,
     core.where: vjp_where,
-    core.leaky_relu: lambda t, _, x, slope: core.where(core.relu(x), t, t*Array(slope)),
-    #need normalcdf stuff
-    core.elu: lambda t, _, x: core.where(core.relu(x), t, t*core.exp(x)),
+    core.leaky_relu: lambda t, _, x, slope: core.where(core.relu(x), t, t * Array(slope)),
+    core.normalcdf: lambda t, _, x: (
+        t * core.exp(Array(-0.5) * core.square(x)) * Array(1 / math.sqrt(2 * math.pi))
+    ),
+    core.elu: lambda t, _, x: core.where(core.relu(x), t, t * core.exp(x)),
+    core.gelu: lambda t, _, x: (
+        t
+        * (
+            core.normalcdf(x)
+            + x * core.exp(Array(-0.5) * core.square(x)) * Array(1 / math.sqrt(2 * math.pi))
+        )
+    ),
 }

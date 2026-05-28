@@ -54,6 +54,10 @@ def np_dot(x, y):  # np.dot doesn't broadcast
     return np.einsum("...j,...jk", x, y)
 
 
+def np_normalcdf(x):
+    return (1 + sp.erf(x / np.sqrt(2))) / 2
+
+
 eval_rules = {
     core.expand_dims: lambda x, axes: np.expand_dims(x, axes),
     core.moveaxis: np.moveaxis,
@@ -71,6 +75,7 @@ eval_rules = {
     core.log: np.log,
     core.where: np.where,
     core.leaky_relu: lambda x, slope: np.where(x > 0, x, slope*x),
-    core.normalcdf: lambda x: (1 + sp.erf(x/np.sqrt(2))) / 2,
-    core.elu: lambda x, alpha: np.where(x > 0, x, alpha * (np.exp(x) - 1)),
+    core.normalcdf: np_normalcdf,
+    core.elu: lambda x: np.where(x > 0, x, np.exp(x) - 1),
+    core.gelu: lambda x: x * np_normalcdf(x),
 }
