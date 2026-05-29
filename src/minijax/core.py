@@ -106,6 +106,9 @@ elu = Primitive("elu", 1)
 gelu = Primitive("gelu", 1)
 pad = Primitive("pad", 1, ("config", "axes", "value"))
 unpad = Primitive("unpad", 2, ("config", "axes"))
+conv = Primitive("conv", 2, ("stride",))
+conv_input_grad = Primitive("conv_input_grad", 3, ("stride",))
+conv_kernel_grad = Primitive("conv_kernel_grad", 3, ("stride",))
 
 
 def sub(x, y):

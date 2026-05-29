@@ -88,6 +88,39 @@ def np_unpad(tangent, primal, config, axes):
     return tangent[tuple(slices)]
 
 
+def _conv_windows(x, kernel_shape, stride):
+    _, _, kernel_h, kernel_w = kernel_shape
+    # shape: (N, Cin, Hout, Wout, kH, kW), matching einsum computation 
+    windows = np.lib.stride_tricks.sliding_window_view(x, (kernel_h, kernel_w), axis=(2, 3))
+    return windows[:, :, ::stride, ::stride, :, :]
+
+
+def np_conv(x, kernel, stride):
+    windows = _conv_windows(x, kernel.shape, stride)
+    return np.einsum("nchwkl,ockl->nohw", windows, kernel)
+
+
+def np_conv_input_grad(tangent, kernel, primal, stride):
+    grad = np.zeros_like(primal, dtype=np.float64)
+    _, _, kernel_h, kernel_w = kernel.shape
+    out_h, out_w = tangent.shape[2:]
+
+    for row in range(kernel_h):
+        row_stop = row + stride * out_h
+        for col in range(kernel_w):
+            col_stop = col + stride * out_w
+            # scatter each output tangent back to the input pixels touched by kernel offset
+            grad[:, :, row:row_stop:stride, col:col_stop:stride] += np.einsum(
+                "nohw,oc->nchw", tangent, kernel[:, :, row, col]
+            )
+    return grad
+
+
+def np_conv_kernel_grad(tangent, primal, kernel, stride):
+    windows = _conv_windows(primal, kernel.shape, stride)
+    return np.einsum("nohw,nchwkl->ockl", tangent, windows)
+
+
 eval_rules = {
     core.expand_dims: lambda x, axes: np.expand_dims(x, axes),
     core.moveaxis: np.moveaxis,
@@ -110,4 +143,7 @@ eval_rules = {
     core.gelu: lambda x: x * np_normalcdf(x),
     core.pad: np_pad,
     core.unpad: np_unpad,
+    core.conv: np_conv,
+    core.conv_input_grad: np_conv_input_grad,
+    core.conv_kernel_grad: np_conv_kernel_grad,
 }

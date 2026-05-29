@@ -103,6 +103,13 @@ def vjp_where(tangent, out, cond, true_val, false_val):
     return (zero, core.where(cond, tangent, zero), core.where(cond, zero, tangent))
 
 
+def vjp_conv(tangent, _, x, kernel, stride):
+    return (
+        core.conv_input_grad(tangent, kernel, x, stride=stride),
+        core.conv_kernel_grad(tangent, x, kernel, stride=stride),
+    )
+
+
 vjp_rules = {
     core.expand_dims: lambda t, _, x, axes: core.reduce_sum(t, axes),
     core.moveaxis: lambda t, _, __, source, destination: core.moveaxis(t, destination, source),
@@ -132,4 +139,5 @@ vjp_rules = {
         )
     ),
     core.pad: lambda t, _, x, config, axes, value: core.unpad(t, x, config=config, axes=axes),
+    core.conv: vjp_conv,
 }
