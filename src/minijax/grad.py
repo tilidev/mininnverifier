@@ -140,4 +140,7 @@ vjp_rules = {
     ),
     core.pad: lambda t, _, x, config, axes, value: core.unpad(t, x, config=config, axes=axes),
     core.conv: vjp_conv,
+    core.avgpool: lambda t, _, x, window_size, stride: core.avgpool_grad(
+        t, x, window_size=window_size, stride=stride
+    ),
 }

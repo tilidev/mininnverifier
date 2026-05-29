@@ -109,6 +109,8 @@ unpad = Primitive("unpad", 2, ("config", "axes"))
 conv = Primitive("conv", 2, ("stride",))
 conv_input_grad = Primitive("conv_input_grad", 3, ("stride",))
 conv_kernel_grad = Primitive("conv_kernel_grad", 3, ("stride",))
+avgpool = Primitive("avgpool", 1, ("window_size", "stride"))
+avgpool_grad = Primitive("avgpool_grad", 2, ("window_size", "stride"))
 
 
 def sub(x, y):

@@ -1,5 +1,8 @@
 # Copyright (c) 2025 by David Boetius
 # Licensed under the MIT Licensed.
+import itertools as it
+import math
+
 import numpy as np
 import scipy.special as sp
 
@@ -121,6 +124,28 @@ def np_conv_kernel_grad(tangent, primal, kernel, stride):
     return np.einsum("nohw,nchwkl->ockl", tangent, windows)
 
 
+def np_avgpool(x, window_size, stride):
+    axes = tuple(range(x.ndim))
+    windows = np.lib.stride_tricks.sliding_window_view(x, window_size, axis=axes)
+    output_slices = tuple(slice(None, None, step) for step in stride)
+    windows = windows[output_slices + (slice(None),) * x.ndim]
+    return windows.mean(axis=tuple(range(x.ndim, 2 * x.ndim)))
+
+
+def np_avgpool_grad(tangent, primal, window_size, stride):
+    grad = np.zeros_like(primal, dtype=np.float64)
+    scale = 1 / math.prod(window_size)
+    out_shape = tangent.shape
+
+    for offset in it.product(*(range(size) for size in window_size)):
+        slices = tuple(
+            slice(start, start + step * out, step)
+            for start, step, out in zip(offset, stride, out_shape)
+        )
+        grad[slices] += tangent * scale
+    return grad
+
+
 eval_rules = {
     core.expand_dims: lambda x, axes: np.expand_dims(x, axes),
     core.moveaxis: np.moveaxis,
@@ -146,4 +171,6 @@ eval_rules = {
     core.conv: np_conv,
     core.conv_input_grad: np_conv_input_grad,
     core.conv_kernel_grad: np_conv_kernel_grad,
+    core.avgpool: np_avgpool,
+    core.avgpool_grad: np_avgpool_grad,
 }

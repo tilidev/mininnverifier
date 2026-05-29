@@ -75,4 +75,7 @@ vmap_rules = {
     core.pad: lambda x, config, axes, value: core.pad(
         x, config=config, axes=tuple(_shift(ax) for ax in axes), value=value
     ),
+    core.avgpool: lambda x, window_size, stride: core.avgpool(
+        x, window_size=(1,) + tuple(window_size), stride=(1,) + tuple(stride)
+    ),
 }
