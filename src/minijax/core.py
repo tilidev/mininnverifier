@@ -104,6 +104,8 @@ leaky_relu = Primitive("leaky_relu", 1, ("slope",))
 normalcdf = Primitive("normalcdf", 1)
 elu = Primitive("elu", 1)
 gelu = Primitive("gelu", 1)
+pad = Primitive("pad", 1, ("config", "axes", "value"))
+unpad = Primitive("unpad", 2, ("config", "axes"))
 
 
 def sub(x, y):

@@ -72,4 +72,7 @@ vmap_rules = {
     core.moveaxis: lambda x, **axes: core.moveaxis(x, **{k: _shift(v) for k, v in axes.items()}),
     core.reshape: lambda x, new_shape: core.reshape(x, x.shape[:1] + new_shape),
     core.reduce_sum: lambda x, axes: core.reduce_sum(x, [_shift(ax) for ax in axes]),
+    core.pad: lambda x, config, axes, value: core.pad(
+        x, config=config, axes=tuple(_shift(ax) for ax in axes), value=value
+    ),
 }

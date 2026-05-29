@@ -131,4 +131,5 @@ vjp_rules = {
             + x * core.exp(Array(-0.5) * core.square(x)) * Array(1 / math.sqrt(2 * math.pi))
         )
     ),
+    core.pad: lambda t, _, x, config, axes, value: core.unpad(t, x, config=config, axes=axes),
 }

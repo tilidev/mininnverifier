@@ -58,6 +58,36 @@ def np_normalcdf(x):
     return (1 + sp.erf(x / np.sqrt(2))) / 2
 
 
+def _normalize_axes(axes, ndim):
+    return tuple(ax + ndim if ax < 0 else ax for ax in axes)
+
+
+def np_pad(x, config, axes, value):
+    left, right, interior = config
+    axes = _normalize_axes(axes, x.ndim)
+    out_shape = list(x.shape)
+    for axis in axes:
+        out_shape[axis] = left + x.shape[axis] + (x.shape[axis] - 1) * interior + right
+
+    out = np.full(out_shape, value, dtype=np.float64)
+    slices = [slice(None)] * x.ndim
+    for axis in axes:
+        stop = left + (interior + 1) * x.shape[axis]
+        slices[axis] = slice(left, stop, interior + 1)
+    out[tuple(slices)] = x
+    return out
+
+
+def np_unpad(tangent, primal, config, axes):
+    left, _, interior = config
+    axes = _normalize_axes(axes, tangent.ndim)
+    slices = [slice(None)] * tangent.ndim
+    for axis in axes:
+        stop = left + (interior + 1) * primal.shape[axis]
+        slices[axis] = slice(left, stop, interior + 1)
+    return tangent[tuple(slices)]
+
+
 eval_rules = {
     core.expand_dims: lambda x, axes: np.expand_dims(x, axes),
     core.moveaxis: np.moveaxis,
@@ -78,4 +108,6 @@ eval_rules = {
     core.normalcdf: np_normalcdf,
     core.elu: lambda x: np.where(x > 0, x, np.exp(x) - 1),
     core.gelu: lambda x: x * np_normalcdf(x),
+    core.pad: np_pad,
+    core.unpad: np_unpad,
 }
