@@ -2,7 +2,14 @@ import numpy as np
 from numba import njit, prange
 
 
-@njit(cache=True, fastmath=True, parallel=True)
+def _njit_fast(fn):
+    try:
+        return njit(cache=True, fastmath=True, parallel=True)(fn)
+    except RuntimeError:
+        return njit(fastmath=True, parallel=True)(fn)
+
+
+@_njit_fast
 def conv2d_nchw(x, kernel, stride):
     batch, in_channels, height, width = x.shape
     out_channels, _, kernel_h, kernel_w = kernel.shape
@@ -36,7 +43,7 @@ def conv2d_nchw(x, kernel, stride):
     return out
 
 
-@njit(cache=True, fastmath=True, parallel=True)
+@_njit_fast
 def conv2d_input_grad_nchw(tangent, kernel, primal, stride):
     batch, in_channels, height, width = primal.shape
     out_channels, _, kernel_h, kernel_w = kernel.shape
@@ -78,7 +85,7 @@ def conv2d_input_grad_nchw(tangent, kernel, primal, stride):
     return grad
 
 
-@njit(cache=True, fastmath=True, parallel=True)
+@_njit_fast
 def conv2d_kernel_grad_nchw(tangent, primal, kernel, stride):
     batch, in_channels, _, _ = primal.shape
     out_channels, _, kernel_h, kernel_w = kernel.shape
@@ -110,7 +117,7 @@ def conv2d_kernel_grad_nchw(tangent, primal, kernel, stride):
     return grad
 
 
-@njit(cache=True, fastmath=True, parallel=True)
+@_njit_fast
 def avgpool4d(x, window_size, stride):
     batch, channels, height, width = x.shape
     window_b, window_c, window_h, window_w = window_size
@@ -146,7 +153,7 @@ def avgpool4d(x, window_size, stride):
     return out
 
 
-@njit(cache=True, fastmath=True, parallel=True)
+@_njit_fast
 def avgpool4d_grad(tangent, primal, window_size, stride):
     batch, channels, height, width = primal.shape
     window_b, window_c, window_h, window_w = window_size
