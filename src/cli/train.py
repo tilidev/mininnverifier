@@ -28,7 +28,7 @@ from minijax.eval import Array, zeros
 from minijax.grad import value_and_grad
 from minijax.jit import jit
 from minijax.nested_containers import map_structure
-from minijax.nn import cross_entropy, init_mlp, mlp
+from minijax.nn import conv_nn, cross_entropy, init_conv_nn, init_mlp, mlp
 from minijax.serialize import dump
 from minijax.vmap import vmap
 
@@ -52,6 +52,25 @@ def load_hyperparams(dataset_id):
         )
         sys.exit(1)
     return json.loads(path.read_text())
+
+
+def _load_conv_layers(cfg):
+    layers = []
+    for layer in cfg["conv_layers"]:
+        pool_window_size = layer["pool_window_size"]
+        pool_stride = layer["pool_stride"]
+        layers.append(
+            {
+                "out_channels": layer["out_channels"],
+                "kernel_size": tuple(layer["kernel_size"]),
+                "stride": layer["stride"],
+                "activation": layer.get("activation", "relu"),
+                "activation_slope": layer.get("activation_slope", 0.01),
+                "pool_window_size": tuple(pool_window_size) if pool_window_size else None,
+                "pool_stride": tuple(pool_stride) if pool_stride else None,
+            }
+        )
+    return layers
 
 
 # ---------------------------------------------------------------------------
@@ -125,6 +144,7 @@ def main():
     args = parser.parse_args()
 
     cfg = load_hyperparams(args.dataset)
+    neural_arch = cfg.get("neural_arch", "mlp")
     in_size = cfg["in_size"]
     layer_sizes = cfg["layer_sizes"]
     num_epochs = cfg["num_epochs"]
@@ -132,7 +152,7 @@ def main():
     learning_rate = cfg["learning_rate"]
     eval_batch_size = cfg["eval_batch_size"]
     rng_key = cfg["rng_key"]
-    num_classes = layer_sizes[-1]
+    num_classes = cfg.get("num_classes", layer_sizes[-1])
 
     # Load data
     images = np.fromfile(args.images, dtype=np.float64)
@@ -142,8 +162,21 @@ def main():
     labels = labels.reshape(num_samples, num_classes)
 
     # Model setup
-    params = init_mlp(in_size, layer_sizes, rng_key=rng_key)
-    model = vmap(mlp, (0, None))
+    if neural_arch == "conv_nn":
+        input_shape = tuple(cfg.get("input_shape", (1, 28, 28)))
+        conv_layers = _load_conv_layers(cfg)
+        dense_layer_sizes = cfg.get("dense_layer_sizes", layer_sizes)
+        params = init_conv_nn(input_shape, conv_layers, dense_layer_sizes, rng_key=rng_key)
+
+        def model(x, params):
+            return conv_nn(x, params, input_shape, conv_layers)
+
+    elif neural_arch == "mlp":
+        params = init_mlp(in_size, layer_sizes, rng_key=rng_key)
+        model = vmap(mlp, (0, None))
+    else:
+        print(f"Error: unknown neural_arch '{neural_arch}'.", file=sys.stderr)
+        sys.exit(1)
 
     def loss(x, y_true, params):
         y_pred = model(x, params)
@@ -170,6 +203,8 @@ def main():
     for epoch in range(1, num_epochs + 1):
         rand_perm = np_rng.permutation(num_samples)
         for batch_idx in it.batched(rand_perm, batch_size):
+            if len(batch_idx) != batch_size:
+                continue
             x = Array(images[batch_idx, :])
             y = Array(labels[batch_idx, :])
             params, opt_state, loss_val = train_step(x, y, params, opt_state)
