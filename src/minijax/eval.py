@@ -7,6 +7,7 @@ import numpy as np
 import scipy.special as sp
 
 from . import core
+from . import fast_kernels
 
 
 class Array(core.Value):
@@ -68,6 +69,14 @@ def _normalize_axes(axes, ndim):
 def np_pad(x, config, axes, value):
     left, right, interior = config
     axes = _normalize_axes(axes, x.ndim)
+    if not axes:
+        return np.array(x, copy=True)
+    if interior == 0:
+        pad_width = [(0, 0)] * x.ndim
+        for axis in axes:
+            pad_width[axis] = (int(left), int(right))
+        return np.pad(x, pad_width, constant_values=value)
+
     out_shape = list(x.shape)
     for axis in axes:
         out_shape[axis] = left + x.shape[axis] + (x.shape[axis] - 1) * interior + right
@@ -99,11 +108,16 @@ def _conv_windows(x, kernel_shape, stride):
 
 
 def np_conv(x, kernel, stride):
+    if x.ndim == 4 and kernel.ndim == 4:
+        return fast_kernels.conv2d_nchw(x, kernel, stride)
     windows = _conv_windows(x, kernel.shape, stride)
     return np.einsum("nchwkl,ockl->nohw", windows, kernel)
 
 
 def np_conv_input_grad(tangent, kernel, primal, stride):
+    if tangent.ndim == 4 and kernel.ndim == 4 and primal.ndim == 4:
+        return fast_kernels.conv2d_input_grad_nchw(tangent, kernel, primal, stride)
+
     grad = np.zeros_like(primal, dtype=np.float64)
     _, _, kernel_h, kernel_w = kernel.shape
     out_h, out_w = tangent.shape[2:]
@@ -120,11 +134,17 @@ def np_conv_input_grad(tangent, kernel, primal, stride):
 
 
 def np_conv_kernel_grad(tangent, primal, kernel, stride):
+    if tangent.ndim == 4 and primal.ndim == 4 and kernel.ndim == 4:
+        return fast_kernels.conv2d_kernel_grad_nchw(tangent, primal, kernel, stride)
+
     windows = _conv_windows(primal, kernel.shape, stride)
     return np.einsum("nohw,nchwkl->ockl", tangent, windows)
 
 
 def np_avgpool(x, window_size, stride):
+    if x.ndim == 4 and len(window_size) == 4 and len(stride) == 4:
+        return fast_kernels.avgpool4d(x, window_size, stride)
+
     axes = tuple(range(x.ndim))
     windows = np.lib.stride_tricks.sliding_window_view(x, window_size, axis=axes)
     output_slices = tuple(slice(None, None, step) for step in stride)
@@ -133,6 +153,9 @@ def np_avgpool(x, window_size, stride):
 
 
 def np_avgpool_grad(tangent, primal, window_size, stride):
+    if tangent.ndim == 4 and primal.ndim == 4 and len(window_size) == 4 and len(stride) == 4:
+        return fast_kernels.avgpool4d_grad(tangent, primal, window_size, stride)
+
     grad = np.zeros_like(primal, dtype=np.float64)
     scale = 1 / math.prod(window_size)
     out_shape = tangent.shape

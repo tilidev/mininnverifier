@@ -4,7 +4,7 @@
     "neural_arch": "conv_nn",
     "conv_layers": [
         {
-            "out_channels": 12,
+            "out_channels": 16,
             "kernel_size": [3, 3],
             "stride": 1,
             "activation": "relu",
@@ -12,7 +12,7 @@
             "pool_stride": [1, 1, 2, 2]
         },
         {
-            "out_channels": 24,
+            "out_channels": 32,
             "kernel_size": [3, 3],
             "stride": 1,
             "activation": "relu",
@@ -20,8 +20,8 @@
             "pool_stride": [1, 1, 2, 2]
         }
     ],
-    "layer_sizes": [96, 2],
-    "num_epochs": 8,
+    "layer_sizes": [192, 2],
+    "num_epochs": 6,
     "batch_size": 64,
     "learning_rate": 1e-3,
     "eval_batch_size": 624,

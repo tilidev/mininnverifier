@@ -7,6 +7,7 @@ authors = [{ name = "David Boetius", email = "david.boetius@uni-konstanz.de" }]
 requires-python = ">=3.14"
 dependencies = [
     "numpy >= 2.0, <3.0",
+    "numba>=0.63.0",
     "scipy>=1.16.3",
 ]
 
